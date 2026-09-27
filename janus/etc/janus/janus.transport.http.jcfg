@@ -1,0 +1,14 @@
+# REST / long-poll transport. Janus answers every request with
+# Access-Control-Allow-Origin mirroring the caller's Origin (or "*"),
+# so a web page served from any other URL may talk to this API.
+general: {
+	json = "indented"
+	base_path = "/janus"
+	http = true
+	port = 8088
+	ip = "0.0.0.0"
+	https = false
+}
+cors: {
+	allow_origin = "*"
+}

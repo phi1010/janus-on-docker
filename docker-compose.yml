@@ -1,0 +1,9 @@
+services:
+  janus:
+    image: ghcr.io/OWNER/janus-on-docker:latest
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: janus
+    restart: unless-stopped
+    network_mode: host

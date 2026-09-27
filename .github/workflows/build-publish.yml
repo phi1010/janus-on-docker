@@ -1,0 +1,62 @@
+name: Build and publish Janus image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable multi-arch builds (qemu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-user-static
+
+      - name: Compute tags
+        id: tags
+        run: |
+          TAGS="sha-${GITHUB_SHA::7}"
+          case "$GITHUB_REF" in
+            refs/tags/v*) V="${GITHUB_REF#refs/tags/v}"; TAGS="$TAGS $V ${V%.*} latest" ;;
+            refs/heads/*) TAGS="$TAGS ${GITHUB_REF#refs/heads/}" ;;
+            refs/pull/*)  TAGS="$TAGS pr-${GITHUB_REF#refs/pull/}"; TAGS="${TAGS%/merge}" ;;
+          esac
+          if [ "$GITHUB_REF" = "refs/heads/${{ github.event.repository.default_branch }}" ]; then
+            TAGS="$TAGS latest"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Build with buildah
+        id: build
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.tags.outputs.tags }}
+          containerfiles: ./Containerfile
+          platforms: linux/amd64,linux/arm64
+          oci: true
+
+      - name: Push to GHCR
+        if: github.event_name != 'pull_request'
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build.outputs.image }}
+          tags: ${{ steps.build.outputs.tags }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,10 @@
+# No rooms are provisioned here on purpose: clients create rooms on demand
+# with a "create" request (string_ids allows any text as the room name),
+# then join. Nothing needs registering in advance.
+#
+# NOTE: require_pvtid and notify_joining are per-room options, Janus has no
+# plugin-wide default for them. Clients must pass them in the create request:
+#   {"request":"create","room":"<any name>","require_pvtid":true,"notify_joining":true}
+general: {
+	string_ids = true
+}
