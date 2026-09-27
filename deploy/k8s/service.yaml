@@ -1,0 +1,17 @@
+# Signalling only (HTTP + WebSocket); media goes straight to the node via
+# hostNetwork. Put an Ingress / TLS terminator in front of this for browsers.
+apiVersion: v1
+kind: Service
+metadata:
+  name: janus
+  namespace: janus
+spec:
+  selector:
+    app: janus
+  ports:
+    - name: http
+      port: 8088
+      targetPort: 8088
+    - name: ws
+      port: 8188
+      targetPort: 8188

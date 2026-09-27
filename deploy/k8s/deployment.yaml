@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: janus
+  namespace: janus
+  labels:
+    app: janus
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # hostNetwork: two pods can't share the ports
+  selector:
+    matchLabels:
+      app: janus
+  template:
+    metadata:
+      labels:
+        app: janus
+    spec:
+      # Same as network_mode: host in docker-compose. Janus needs the RTP
+      # UDP range (20000-20100) and ICE to see the node's real address.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: janus
+          image: ghcr.io/phi1010/janus-on-docker:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8088
+              protocol: TCP
+            - name: ws
+              containerPort: 8188
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /janus/info
+              port: 8088
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /janus/info
+              port: 8088
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 1Gi

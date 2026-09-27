@@ -25,3 +25,14 @@ hosted on another URL can use the REST API (WebSockets have no CORS).
 Local build:
 
     buildah build -t janus-on-docker .
+
+## Kubernetes / Argo CD
+
+`deploy/k8s` holds a kustomize base (namespace, hostNetwork Deployment,
+Service). `deploy/argocd/application.yaml` is an Argo CD Application that
+syncs it from this repo:
+
+    kubectl apply -f deploy/argocd/application.yaml
+
+The GHCR package must be public, or add an `imagePullSecrets` entry to the
+Deployment.

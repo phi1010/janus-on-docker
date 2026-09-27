@@ -1,0 +1,28 @@
+# kubectl apply -f deploy/argocd/application.yaml   (in the cluster running Argo CD)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: janus
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # With Argo CD Image Updater installed, this re-pulls :latest whenever
+    # the digest on GHCR changes. Harmless if the updater isn't installed.
+    argocd-image-updater.argoproj.io/image-list: janus=ghcr.io/phi1010/janus-on-docker:latest
+    argocd-image-updater.argoproj.io/janus.update-strategy: digest
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phi1010/janus-on-docker.git
+    targetRevision: main
+    path: deploy/k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: janus
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
