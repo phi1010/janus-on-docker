@@ -36,3 +36,12 @@ syncs it from this repo:
 
 The GHCR package must be public, or add an `imagePullSecrets` entry to the
 Deployment.
+
+The Ingress (nginx ingress class) serves `janus.qube.local.phi1010.com` with a
+Let's Encrypt certificate from cert-manager (`ClusterIssuer/letsencrypt`, set
+your email in `deploy/k8s/clusterissuer.yaml` or drop it if one exists):
+
+    REST:      https://janus.qube.local.phi1010.com/janus
+    WebSocket: wss://janus.qube.local.phi1010.com/ws
+
+TLS ends at the ingress; Janus itself stays plain HTTP/WS on the node.

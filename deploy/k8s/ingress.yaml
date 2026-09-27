@@ -1,0 +1,40 @@
+# https://janus.qube.local.phi1010.com/janus  -> REST API (8088)
+# wss://janus.qube.local.phi1010.com/ws       -> WebSocket API (8188)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: janus
+  namespace: janus
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Keep long-poll and WebSocket connections open
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Strip /ws so the WebSocket transport sees "/"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - janus.qube.local.phi1010.com
+      secretName: janus-tls
+  rules:
+    - host: janus.qube.local.phi1010.com
+      http:
+        paths:
+          - path: /(janus)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: janus
+                port:
+                  number: 8088
+          - path: /ws(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: janus
+                port:
+                  number: 8188
