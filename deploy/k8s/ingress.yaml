@@ -1,38 +1,33 @@
 # https://janus.qube.local.phi1010.com/janus  -> REST API (8088)
 # wss://janus.qube.local.phi1010.com/ws       -> WebSocket API (8188)
+#
+# TLS comes from Traefik's own ACME resolver ("letsencrypt", configured in
+# the traefik chart values): no cert-manager, no Secret. Janus' WebSocket
+# transport ignores the URL path, so /ws needs no rewrite.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: janus
   namespace: janus
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    # Keep long-poll and WebSocket connections open
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    # Strip /ws so the WebSocket transport sees "/"
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
 spec:
   ingressClassName: traefik
-  tls:
-    - hosts:
-        - janus.qube.local.phi1010.com
-      secretName: janus-tls
   rules:
     - host: janus.qube.local.phi1010.com
       http:
         paths:
-          - path: /(janus)(.*)
-            pathType: ImplementationSpecific
+          - path: /janus
+            pathType: Prefix
             backend:
               service:
                 name: janus
                 port:
                   number: 8088
-          - path: /ws(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /ws
+            pathType: Prefix
             backend:
               service:
                 name: janus
